@@ -154,14 +154,79 @@ void do_clt_udp()
 	}
 }
 
-void do_srv_tcp(unsigned short port)
+int do_srv_tcp(unsigned short port)
 {
-	printf("Tcp Server Not Implemented!\n");
+	int sock=socket(AF_INET,SOCK_STREAM,0);
+	struct sockaddr_in addr;
+	addr.sin_family=AF_INET;
+	addr.sin_port=htons(port);
+	addr.sin_addr.s_addr=htonl(INADDR_ANY);
+
+	if(bind(sock,(struct sockaddr*)&addr,sizeof(addr))!=0)
+	{
+		perror("bind");
+		return -1;
+	}
+
+	if(listen(sock,1)!=0)
+	{
+		perror("listen");
+		return -1;
+	}
+	for(;;)
+	{
+		int cfd;
+		if(-1==(cfd=accept(sock,NULL,NULL)))
+		{
+			perror("accept");
+			return -1;
+		}
+		printf("a client connected\n");
+		char buf[1024*1024*2];
+		int ret;
+		while((ret=read(cfd,buf,sizeof(buf)))>0)
+		{
+			printf("readed:%s\n",buf);
+		}
+		printf("read done:%d\n",ret);
+	}
+	return 0;
 }
 
-void do_clt_tcp()
+int do_clt_tcp()
 {
-	printf("Tcp Client Not Implemented!\n");
+	int sock = socket(PF_INET,SOCK_STREAM,0);
+
+	struct sockaddr_in addr;
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(cltport);
+	addr.sin_addr.s_addr=inet_addr(cltaddr);
+
+	int connect_result = connect(sock,(struct sockaddr*)&addr,sizeof(addr));
+	printf("connect result:%d\n",connect_result);
+	if(connect_result!=0)
+	{
+		perror("connect");
+		return -1;
+	}
+	else
+	{
+		char buf[1024];
+		gets(buf);
+		int len=strlen(buf);
+		int ret = write(sock,buf,len);
+		printf("write result:%d\n",ret);
+		if(-1==ret)
+		{
+			perror("send");
+			return -1;
+		}
+		else
+		{
+			printf("send return:%d",ret);
+		}
+	}
+	return 0;
 }
 
 int main(int argc,char** argv)
