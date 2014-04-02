@@ -163,17 +163,21 @@ int main(int argc,char** argv)
 
 	print_flag();
 
-	if(!is_valid_addr(cltaddr))
+	// translate host name to ip address
+	if(!issrv)
 	{
-		struct hostent* he = gethostbyname(cltaddr);
-		if(he==NULL)
+		if(!is_valid_addr(cltaddr))
 		{
-			printf("Invalid Address!\n");
-			return 1;
+			struct hostent* he = gethostbyname(cltaddr);
+			if(he==NULL)
+			{
+				printf("Invalid Address!\n");
+				return 1;
+			}
+			char str[1024];
+			inet_ntop(AF_INET,he->h_addr,str,sizeof(str));
+			cltaddr=strdup(str);
 		}
-		char str[1024];
-		inet_ntop(AF_INET,he->h_addr,str,sizeof(str));
-		cltaddr=strdup(str);
 	}
 
 	if(issrv)
