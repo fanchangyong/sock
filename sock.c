@@ -8,17 +8,20 @@
 #include <errno.h>
 #include <netdb.h>
 
+#define DEFAULT_BACKLOG 5
+
 int isudp = 0;
 int issrv = 0;
 unsigned short srvport = 0;
 const char* cltaddr=0;
 unsigned short cltport = 0;
+int backlog = 0;
 
 int parse_flag(int argc,char** argv)
 {
 	printf("before,ind:%d\n",optind);
 	int c;
-	while((c=getopt(argc,argv,"s:u"))!=-1)
+	while((c=getopt(argc,argv,"s:ub:"))!=-1)
 	{
 		switch(c)
 		{
@@ -28,6 +31,9 @@ int parse_flag(int argc,char** argv)
 				break;
 			case 'u':
 				isudp = 1;
+				break;
+			case 'b':
+				backlog = atoi(optarg);
 				break;
 			default:
 				printf("optarg:%s\n",optarg);
@@ -168,7 +174,10 @@ int do_srv_tcp(unsigned short port)
 		return -1;
 	}
 
-	if(listen(sock,1)!=0)
+	if(backlog==0)
+		backlog=DEFAULT_BACKLOG;
+
+	if(listen(sock,backlog)!=0)
 	{
 		perror("listen");
 		return -1;
