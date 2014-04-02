@@ -105,7 +105,7 @@ int is_valid_addr(const char* addr)
 	return 1;
 }
 
-void do_srv(unsigned short port)
+void do_srv_udp(unsigned short port)
 {
 	int sock = socket(PF_INET,SOCK_DGRAM,0);
 	struct sockaddr_in addr;
@@ -132,7 +132,7 @@ void do_srv(unsigned short port)
 	}
 }
 
-void do_clt()
+void do_clt_udp()
 {
 	int sock=socket(PF_INET,SOCK_DGRAM,0);
 
@@ -152,6 +152,16 @@ void do_clt()
 	{
 		printf("write result:%d\n",ret);
 	}
+}
+
+void do_srv_tcp(unsigned short port)
+{
+	printf("Tcp Server Not Implemented!\n");
+}
+
+void do_clt_tcp()
+{
+	printf("Tcp Client Not Implemented!\n");
 }
 
 int main(int argc,char** argv)
@@ -182,11 +192,17 @@ int main(int argc,char** argv)
 
 	if(issrv)
 	{
-		do_srv(srvport);
+		if(isudp)
+			do_srv_udp(srvport);
+		else
+			do_srv_tcp(srvport);
 	}
 	else
 	{
-		do_clt();
+		if(isudp)
+			do_clt_udp();
+		else
+			do_clt_tcp();
 	}
 	
 	return 0;
