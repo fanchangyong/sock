@@ -10,18 +10,27 @@
 
 #define DEFAULT_BACKLOG 5
 
+// udp or tcp flags
 int isudp = 0;
 int issrv = 0;
+
+// connection addr and port info
 unsigned short srvport = 0;
 const char* cltaddr=0;
 unsigned short cltport = 0;
+
+// listen backlog
 int backlog = 0;
+
+// read and write info
+int read_n = 0;
+char *write_buf = 0;
 
 int parse_flag(int argc,char** argv)
 {
 	printf("before,ind:%d\n",optind);
 	int c;
-	while((c=getopt(argc,argv,"s:ub:"))!=-1)
+	while((c=getopt(argc,argv,"s:ub:r:w:"))!=-1)
 	{
 		switch(c)
 		{
@@ -35,6 +44,16 @@ int parse_flag(int argc,char** argv)
 			case 'b':
 				backlog = atoi(optarg);
 				break;
+			case 'r':
+				read_n = atoi(optarg);
+				break;
+			case 'w':
+				{
+					int len = strlen(optarg);
+					write_buf = malloc(len+1);
+					strcpy(write_buf,optarg);
+					break;
+				}
 			default:
 				printf("optarg:%s\n",optarg);
 				printf("optind:%d\n",optind);
@@ -160,6 +179,18 @@ void do_clt_udp()
 	}
 }
 
+int do_read(int fd,int read_n)
+{
+	char buf[1024*1024*2];
+	int ret;
+	while((ret=read(fd,buf,sizeof(buf)))>0)
+	{
+		printf("readed:%s\n",buf);
+	}
+	printf("read done:%d\n",ret);
+	return 0;
+}
+
 int do_srv_tcp(unsigned short port)
 {
 	int sock=socket(AF_INET,SOCK_STREAM,0);
@@ -182,6 +213,9 @@ int do_srv_tcp(unsigned short port)
 		perror("listen");
 		return -1;
 	}
+	
+	int conn_count = 0;
+
 	for(;;)
 	{
 		int cfd;
@@ -190,14 +224,11 @@ int do_srv_tcp(unsigned short port)
 			perror("accept");
 			return -1;
 		}
-		printf("a client connected\n");
-		char buf[1024*1024*2];
-		int ret;
-		while((ret=read(cfd,buf,sizeof(buf)))>0)
+		printf("a client connected:%d\n",++conn_count);
+		if(read_n>0)
 		{
-			printf("readed:%s\n",buf);
+			do_read(cfd,read_n);
 		}
-		printf("read done:%d\n",ret);
 	}
 	return 0;
 }
@@ -220,19 +251,19 @@ int do_clt_tcp()
 	}
 	else
 	{
-		char buf[1024];
-		gets(buf);
-		int len=strlen(buf);
-		int ret = write(sock,buf,len);
-		printf("write result:%d\n",ret);
-		if(-1==ret)
+		if(write_buf!=0)
 		{
-			perror("send");
-			return -1;
-		}
-		else
-		{
-			printf("send return:%d",ret);
+			int ret = write(sock,write_buf,strlen(write_buf)+1);
+			printf("write result:%d\n",ret);
+			if(-1==ret)
+			{
+				perror("send");
+				return -1;
+			}
+			else
+			{
+				printf("send return:%d",ret);
+			}
 		}
 	}
 	return 0;
